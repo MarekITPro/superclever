@@ -1,4 +1,10 @@
 #! /bin/bash
+# check params - must be two :)
+if [[ $# -ne 2 ]]; then
+    echo "Illegal number of parameters, usage: restore_and_check_db.sh sql_sa_password database_name"
+    exit 2
+fi
+
 echo "partition data disk"
 sudo parted /dev/disk/azure/scsi1/lun0 mklabel gpt
 sudo parted -a opt /dev/disk/azure/scsi1/lun0 mkpart primary ext4 0% 100%
