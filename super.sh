@@ -71,15 +71,18 @@ sudo systemctl stop telegraf
 # start the telegraf agent on the VM to ensure it picks up the latest configuration 
 sudo systemctl start telegraf
 
-# set some vars for SQL
+# Setting some vars from script params
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
 echo $DATABASE_NAME
 
 sudo systemctl stop mssql-server
-sudo MSSQL_SA_PASSWORD=$1 /opt/mssql/bin/mssql-conf set-sa-password
+sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-password
 sudo systemctl start mssql-server
 
-
+# time to sleep
+echo "Created by Ticketer.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
+sleep 30m
+echo "Created by Ticketer.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
 
 
