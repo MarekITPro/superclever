@@ -1,7 +1,7 @@
 #! /bin/bash
 # check params - must be two :)
 if [[ $# -ne 2 ]]; then
-    echo "Illegal number of parameters, usage: restore_and_check_db.sh sql_sa_password database_name"
+    echo "Illegal number of parameters, use: restore_and_check_db.sh sql_sa_password database_name"
     exit 2
 fi
 
@@ -43,3 +43,32 @@ sudo chmod +x /datadrive/tools/azcopy
 
 echo "install AzureCLI"
 sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+SQL_SA_PASSWORD=$1
+DATABASE_NAME=$2
+echo $DATABASE_NAME
+
+sudo systemctl stop mssql-server
+sudo MSSQL_SA_PASSWORD=$1 /opt/mssql/bin/mssql-conf set-sa-password
+sudo systemctl start mssql-server
+
+# download the package to the VM 
+wget https://dl.influxdata.com/telegraf/releases/telegraf_1.8.0~rc1-1_amd64.deb 
+
+# install the package 
+sudo dpkg -i telegraf_1.8.0~rc1-1_amd64.deb
+
+# generate the new Telegraf config file in the current directory 
+telegraf --input-filter cpu:mem --output-filter azure_monitor config > azm-telegraf.conf 
+
+# replace the example config with the new generated config 
+sudo cp azm-telegraf.conf /etc/telegraf/telegraf.conf
+
+# stop the telegraf agent on the VM 
+sudo systemctl stop telegraf 
+# start the telegraf agent on the VM to ensure it picks up the latest configuration 
+sudo systemctl start telegraf
+
+
+
+
