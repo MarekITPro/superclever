@@ -81,8 +81,8 @@ sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-passwor
 sudo systemctl start mssql-server
 
 # time to sleep
-echo "Created by Ticketer.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
+echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
 sleep 30m
-echo "Created by Ticketer.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
+echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
 
 
