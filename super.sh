@@ -21,7 +21,7 @@ sudo parted -a opt /dev/disk/azure/scsi1/lun0 mkpart primary ext4 0% 100%
 
 # wait for partition to show up before formatting - kernel to catch up (max 10 minutes - tbc for 20TB disk!)
 counter=0
-while [ ! -e /dev/sdc ]; do
+while [ ! -e /dev/disk/azure/scsi1/lun0-part1 ]; do
     sleep 1m
     counter=$((counter + 1))
     if [ $counter -ge 10 ]; then
