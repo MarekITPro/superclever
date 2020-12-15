@@ -58,7 +58,7 @@ sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 wget -O /tmp/telegraf_1.8.0~rc1-1_amd64.deb https://dl.influxdata.com/telegraf/releases/telegraf_1.8.0~rc1-1_amd64.deb 
 
 # install the package 
-sudo dpkg -i /tmp/telegraf_1.8.0~rc1-1_amd64.deb/telegraf_1.8.0~rc1-1_amd64.deb
+sudo dpkg -i /tmp/telegraf_1.8.0~rc1-1_amd64.deb
 
 # generate the new Telegraf config file in the current directory 
 telegraf --input-filter cpu:mem --output-filter azure_monitor config > /tmp/azm-telegraf.conf 
