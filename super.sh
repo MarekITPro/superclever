@@ -1,7 +1,7 @@
 #! /bin/bash
-# check params - must be two :)
-if [[ $# -ne 2 ]]; then
-    echo "Illegal number of parameters, use: restore_and_check_db.sh sql_sa_password database_name"
+# check params :)
+if [[ $# -ne 3 ]]; then
+    echo "Illegal number of parameters, use: restore_and_check_db.sh sql_sa_password database_name sas_key"
     exit 2
 fi
 
