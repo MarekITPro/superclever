@@ -54,35 +54,51 @@ sudo chmod +x /datadrive/tools/azcopy
 echo "install AzureCLI"
 sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# download the package to the VM 
-wget -O /tmp/telegraf_1.8.0~rc1-1_amd64.deb https://dl.influxdata.com/telegraf/releases/telegraf_1.8.0~rc1-1_amd64.deb 
-
-# install the package 
-sudo dpkg -i /tmp/telegraf_1.8.0~rc1-1_amd64.deb
-
-# generate the new Telegraf config file in the current directory 
-telegraf --input-filter cpu:mem --output-filter azure_monitor config > /tmp/azm-telegraf.conf 
-
-# replace the example config with the new generated config 
-sudo cp /tmp/azm-telegraf.conf /etc/telegraf/telegraf.conf
-
-# stop the telegraf agent on the VM 
-sudo systemctl stop telegraf 
-# start the telegraf agent on the VM to ensure it picks up the latest configuration 
-sudo systemctl start telegraf
+echo "install metricbeat"
+curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
+sudo dpkg -i metricbeat-7.8.1-amd64.deb
 
 # Setting some vars from script params
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
 echo $DATABASE_NAME
+SAS_KEY=$3
 
 sudo systemctl stop mssql-server
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-password
 sudo systemctl start mssql-server
 
-# time to sleep
+# time to sleep TODO: make that into param as the required sleep time may be up to 1 hour for AZ to provision access to KV for VM
 echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
 sleep 30m
 echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
 
+
+# Access and download backups from storage using azcopy
+/datadrive/tools/azcopy login --identity
+/datadrive/tools/azcopy copy "https://marekteststorage.blob.core.windows.net/sqlbackups/$DATABASE_NAME.bak$SAS_KEY" "/datadrive/backup/$DATABASE_NAME.bak"
+/datadrive/tools/azcopy logout
+
+BACKUP_NAME=`ls -t1 /datadrive/backup/* |head -n 1`
+echo $BACKUP_NAME
+
+echo "figure out file names to restore - to be changed"
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "RESTORE FILELISTONLY FROM DISK='$BACKUP_NAME'" | tail -n +3 |head -n -2|awk '{ print $1 }' > /tmp/restore_fnames.txt
+cat /tmp/restore_fnames.txt |  awk 'BEGIN { print "RESTORE DATABASE ['$DATABASE_NAME'] FROM DISK= ~'$BACKUP_NAME'~ WITH FILE=1," } { print "MOVE N\x27"$1"\x27 TO N\x27/datadrive/restore/"$1"\x27, " } END { print "NOUNLOAD, STATS=5" }' >/tmp/restore_3_TSQL.txt
+cat /tmp/restore_3_TSQL.txt | tr "~" "'" > /tmp/restore_4_final.sql
+cat /tmp/restore_4_final.sql
+
+# Process the TSQL restore /time consiming, storage I/O/
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -i /tmp/restore_4_final.sql
+
+DB_RESTORE_RESULT=`/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "EXEC sp_readerrorlog 0,1,'restore is complete',$DATABASE_NAME" |tail -n +3 |head -n -2 |awk '{ if ($6 == "complete") {print "RESTORED" } }'`
+if [[ $DB_RESTORE_RESULT == "RESTORED" ]]; then
+    echo "DB restore completed"
+else
+    echo "DB restore failed"
+    exit 2
+fi
+
+echo "Run backup integrity check"
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "DBCC CHECKDB ($DATABASE_NAME) with no_infomsgs,all_errormsgs"
 
