@@ -19,7 +19,10 @@ echo "partition data disk"
 sudo parted /dev/disk/azure/scsi1/lun0 mklabel gpt
 sudo parted -a opt /dev/disk/azure/scsi1/lun0 mkpart primary ext4 0% 100%
 
-# wait for partition to show up before formatting - kernel to catch up (max 10 minutes - tbc for 20TB disk!)
+# wait for partition to show up before attempting format
+sleep 1m
+
+# allow kernel to catch up before checking for lun0-part1 (max 10 minutes - tbc for 20TB disk!)
 counter=0
 while [ ! -e /dev/disk/azure/scsi1/lun0-part1 ]; do
     sleep 1m
@@ -54,15 +57,18 @@ sudo chmod +x /datadrive/tools/azcopy
 echo "install AzureCLI"
 sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-echo "install metricbeat"
-curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
-sudo dpkg -i metricbeat-7.8.1-amd64.deb
+sleep 1m
+
+# echo "install metricbeat"
+# curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
+# sudo dpkg -i metricbeat-7.8.1-amd64.deb
 
 # Setting some vars from script params
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
 echo $DATABASE_NAME
 SAS_KEY=$3
+echo $SAS_KEY
 
 sudo systemctl stop mssql-server
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-password
