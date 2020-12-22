@@ -67,7 +67,7 @@ sleep 1m
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
 echo $DATABASE_NAME
-SAS_KEY=$(eval echo $3)
+SAS_KEY=$3
 echo $SAS_KEY
 
 sudo systemctl stop mssql-server
@@ -77,12 +77,13 @@ sleep 1m
 sudo systemctl start mssql-server
 
 # time to sleep TODO: make that into param as the required sleep time may be up to 1 hour for AZ to provision access to KV for VM
-echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
-sleep 30m
-echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
+# echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
+# sleep 30m
+# echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
 
-# Access and download backups from storage using azcopy
+# Access and download backups from storage using azcopy HARDCODED path?
 /datadrive/tools/azcopy login --identity
+sleep 1m
 /datadrive/tools/azcopy copy "https://marekteststorage.blob.core.windows.net/sqlbackups/$DATABASE_NAME.bak$SAS_KEY" "/datadrive/backup/$DATABASE_NAME.bak"
 /datadrive/tools/azcopy logout
 
