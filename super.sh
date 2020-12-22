@@ -54,8 +54,8 @@ echo "extract azcopy"
 sudo tar -xf /datadrive/tools/azcopy_v10.tar.gz --strip-components=1 -C /datadrive/tools
 sudo chmod +x /datadrive/tools/azcopy
 
-echo "install AzureCLI"
-sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+# echo "install AzureCLI"
+# sudo curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 sleep 1m
 
@@ -67,18 +67,19 @@ sleep 1m
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
 echo $DATABASE_NAME
-SAS_KEY=$3
+SAS_KEY=$(eval echo $3)
 echo $SAS_KEY
 
 sudo systemctl stop mssql-server
+sleep 1m
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-password
+sleep 1m
 sudo systemctl start mssql-server
 
 # time to sleep TODO: make that into param as the required sleep time may be up to 1 hour for AZ to provision access to KV for VM
 echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
 sleep 30m
 echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
-
 
 # Access and download backups from storage using azcopy
 /datadrive/tools/azcopy login --identity
