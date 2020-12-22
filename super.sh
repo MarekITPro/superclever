@@ -99,8 +99,9 @@ cat /tmp/restore_4_final.sql
 # Process the TSQL restore /time consiming, storage I/O/
 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -i /tmp/restore_4_final.sql
 
+DB_RESTORE_RESULT="FAILED"
 DB_RESTORE_RESULT=`/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "EXEC sp_readerrorlog 0,1,'restore is complete',$DATABASE_NAME" |tail -n +3 |head -n -2 |awk '{ if ($6 == "complete") {print "RESTORED" } }'`
-if [[ $DB_RESTORE_RESULT == "RESTORED" ]]; then
+if [ $DB_RESTORE_RESULT != "FAILED" ]; then
     echo "DB restore completed"
 else
     echo "DB restore failed"
@@ -108,5 +109,7 @@ else
 fi
 
 echo "Run backup integrity check"
+echo "dbcc check - starting" | sudo dd of=/tmp/dbccprogress &> /dev/null
 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "DBCC CHECKDB ($DATABASE_NAME) with no_infomsgs,all_errormsgs"
-
+echo "DBCC check executed"
+echo "dbcc check - stopped" | sudo dd of=/tmp/dbccprogress &> /dev/null
