@@ -59,10 +59,6 @@ sudo chmod +x /datadrive/tools/azcopy
 
 sleep 1m
 
-# echo "install metricbeat"
-# curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
-# sudo dpkg -i metricbeat-7.8.1-amd64.deb
-
 # Setting some vars from script params
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
@@ -80,6 +76,11 @@ sudo systemctl start mssql-server
 # echo "Created by Marek.Start sleep." | sudo dd of=/tmp/terraformsleepstart &> /dev/null
 # sleep 30m
 # echo "Created by Marek.Stop sleep." | sudo dd of=/tmp/terraformsleepend &> /dev/null
+
+echo "install metricbeat"
+curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
+sudo dpkg -i metricbeat-7.8.1-amd64.deb
+# TODO: auth to ELK stack needs doing here as well
 
 # Access and download backups from storage using azcopy HARDCODED path?
 /datadrive/tools/azcopy login --identity
