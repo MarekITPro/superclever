@@ -82,35 +82,60 @@ curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.
 sudo dpkg -i metricbeat-7.8.1-amd64.deb
 # TODO: auth to ELK stack needs doing here as well
 
+echo "install powershell via package repo ubuntu 18.04"
+# Update the list of packages
+sudo apt-get update
+# Install pre-requisite packages.
+sudo apt-get install -y wget apt-transport-https software-properties-common
+# Download the Microsoft repository GPG keys
+wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+# Update the list of products
+sudo apt-get update
+# Enable the "universe" repositories
+sudo add-apt-repository universe
+# Install PowerShell
+sudo apt-get install -y powershell
+
+# echo "install powershell via direct download"
+# this fails on dpkg due to pkg deps
+# curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+# sudo apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
+# sudo apt-get update
+# sudo dpkg -i powershell_7.1.0-1.ubuntu.18.04_amd64.deb
+# sudo apt-get install -f
+
+
 # Access and download backups from storage using azcopy HARDCODED path?
-/datadrive/tools/azcopy login --identity
-sleep 1m
-/datadrive/tools/azcopy copy "https://marekteststorage.blob.core.windows.net/sqlbackups/$DATABASE_NAME.bak$SAS_KEY" "/datadrive/backup/$DATABASE_NAME.bak"
-/datadrive/tools/azcopy logout
+# /datadrive/tools/azcopy login --identity
+# sleep 1m
+# /datadrive/tools/azcopy copy "https://marekteststorage.blob.core.windows.net/sqlbackups/$DATABASE_NAME.bak$SAS_KEY" "/datadrive/backup/$DATABASE_NAME.bak"
+# /datadrive/tools/azcopy logout
 
-BACKUP_NAME=`ls -t1 /datadrive/backup/* |head -n 1`
-echo $BACKUP_NAME
+# BACKUP_NAME=`ls -t1 /datadrive/backup/* |head -n 1`
+# echo $BACKUP_NAME
 
-echo "figure out file names to restore - to be changed"
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "RESTORE FILELISTONLY FROM DISK='$BACKUP_NAME'" | tail -n +3 |head -n -2|awk '{ print $1 }' > /tmp/restore_fnames.txt
-cat /tmp/restore_fnames.txt |  awk 'BEGIN { print "RESTORE DATABASE ['$DATABASE_NAME'] FROM DISK= ~'$BACKUP_NAME'~ WITH FILE=1," } { print "MOVE N\x27"$1"\x27 TO N\x27/datadrive/restore/"$1"\x27, " } END { print "NOUNLOAD, STATS=5" }' >/tmp/restore_3_TSQL.txt
-cat /tmp/restore_3_TSQL.txt | tr "~" "'" > /tmp/restore_4_final.sql
-cat /tmp/restore_4_final.sql
+# echo "figure out file names to restore - to be changed"
+# /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "RESTORE FILELISTONLY FROM DISK='$BACKUP_NAME'" | tail -n +3 |head -n -2|awk '{ print $1 }' > /tmp/restore_fnames.txt
+# cat /tmp/restore_fnames.txt |  awk 'BEGIN { print "RESTORE DATABASE ['$DATABASE_NAME'] FROM DISK= ~'$BACKUP_NAME'~ WITH FILE=1," } { print "MOVE N\x27"$1"\x27 TO N\x27/datadrive/restore/"$1"\x27, " } END { print "NOUNLOAD, STATS=5" }' >/tmp/restore_3_TSQL.txt
+# cat /tmp/restore_3_TSQL.txt | tr "~" "'" > /tmp/restore_4_final.sql
+# cat /tmp/restore_4_final.sql
 
-# Process the TSQL restore /time consiming, storage I/O/
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -i /tmp/restore_4_final.sql
+# # Process the TSQL restore /time consiming, storage I/O/
+# /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -i /tmp/restore_4_final.sql
 
-DB_RESTORE_RESULT="FAILED"
-DB_RESTORE_RESULT=`/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "EXEC sp_readerrorlog 0,1,'restore is complete',$DATABASE_NAME" |tail -n +3 |head -n -2 |awk '{ if ($6 == "complete") {print "RESTORED" } }'`
-if [ $DB_RESTORE_RESULT != "FAILED" ]; then
-    echo "DB restore completed"
-else
-    echo "DB restore failed"
-    exit 2
-fi
+# DB_RESTORE_RESULT="FAILED"
+# DB_RESTORE_RESULT=`/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "EXEC sp_readerrorlog 0,1,'restore is complete',$DATABASE_NAME" |tail -n +3 |head -n -2 |awk '{ if ($6 == "complete") {print "RESTORED" } }'`
+# if [ $DB_RESTORE_RESULT != "FAILED" ]; then
+#     echo "DB restore completed"
+# else
+#     echo "DB restore failed"
+#     exit 2
+# fi
 
-echo "Run backup integrity check"
-echo "dbcc check - starting" | sudo dd of=/tmp/dbccprogress &> /dev/null
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "DBCC CHECKDB ($DATABASE_NAME) with no_infomsgs,all_errormsgs"
-echo "DBCC check executed"
-echo "dbcc check - stopped" | sudo dd of=/tmp/dbccprogress &> /dev/null
+# echo "Run backup integrity check"
+# echo "dbcc check - starting" | sudo dd of=/tmp/dbccprogress &> /dev/null
+# /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SQL_SA_PASSWORD -Q "DBCC CHECKDB ($DATABASE_NAME) with no_infomsgs,all_errormsgs"
+# echo "DBCC check executed"
+# echo "dbcc check - stopped" | sudo dd of=/tmp/dbccprogress &> /dev/null
