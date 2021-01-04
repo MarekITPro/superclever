@@ -1,7 +1,7 @@
 #! /bin/bash
 # check params :)
-if [[ $# -ne 4 ]]; then
-    echo "Illegal number of parameters, use: script.sh sql_sa_password database_name sas_key storage_acc_name"
+if [[ $# -ne 6 ]]; then
+    echo "Illegal number of parameters, use: script.sh sql_sa_password database_name sas_key storage_acc_name storage_cont beats_pass"
     exit 2
 fi
 
@@ -74,6 +74,8 @@ DATABASE_NAME=$2
 echo $DATABASE_NAME
 SAS_KEY=$3
 STORAGE_ACC=$4
+STORAGE_CONT=$5
+BEATS_PASS=$6
 
 echo "setting local SQL SA pwd"
 # Set local SA password for SQL instance
@@ -87,12 +89,13 @@ sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set filelocati
 sleep 1m
 sudo systemctl start mssql-server
 
-# echo "install metricbeat"
-# curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.8.1-amd64.deb
-# sudo dpkg -i metricbeat-7.8.1-amd64.deb
-# TODO: auth to ELK stack needs doing here as well
+echo "install metricbeat with sql module"
+# install and enroll metricbeat and tag with 'sql' /hardcoded, tag must exist/
+/tmp/install_metricbeat.sh sql
+# enable mssql module
+/usr/bin/metricbeat modules enable mssql
 
 echo "invoke PowerShell to download, restore and dbcc checkdb"
-/tmp/sqldbcheck.ps1 -SASTOKEN $SAS_KEY -dbName $DATABASE_NAME -azStorageAccName $STORAGE_ACC -sqlSAPass $SQL_SA_PASSWORD
+/tmp/sqldbcheck.ps1 -SASTOKEN $SAS_KEY -dbName $DATABASE_NAME -azStorageAccName $STORAGE_ACC -azStorageContainer $STORAGE_CONT -sqlSAPass $SQL_SA_PASSWORD
 
 echo "done, or is it?"

@@ -5,6 +5,7 @@ param(
    [string]$dbName = "AdventureWorks2017.Sql.Aux.Full",
    [int]$lastXDays = 60,
    [string]$azStorageAccName = 'marekteststorage',
+   [string]$azStorageContainer = 'sqlbackups',
    [string]$SASTOKEN = '',
    [string]$sqlSAPass = '')
 
@@ -13,10 +14,10 @@ Install-Module -Name Az.Storage,SQLServer -Force
 
 # Get list of files for given database from AZ Blob
 $context = New-AzStorageContext -SasToken $SASTOKEN -StorageAccountName $azStorageAccName
-$list = Get-AzStorageBlob -container sqlbackups -Context $context |Where-Object {($_.lastmodified -ge $(get-date).AddDays(-$lastXDays)) -and ($_.Name -match $dbname)}
+$list = Get-AzStorageBlob -container $azStorageContainer -Context $context |Where-Object {($_.lastmodified -ge $(get-date).AddDays(-$lastXDays)) -and ($_.Name -match $dbname)}
 $newest = $list|Select-Object -Property Name |Sort-Object -Descending -Property LastModified |Select-Object -First 1
 $newestWithoutNumber = $newest.Name -replace '.(\d+).bak',''
-$fullListToRestore = Get-AzStorageBlob -container sqlbackups -Context $context | Where-Object {$_.Name -match $newestWithoutNumber} |Select-Object -Property Name
+$fullListToRestore = Get-AzStorageBlob -container $azStorageContainer -Context $context | Where-Object {$_.Name -match $newestWithoutNumber} |Select-Object -Property Name
 
 # download
 $fullListToRestore | Get-AzStorageBlobContent -Destination '/datadrive/backup/'
