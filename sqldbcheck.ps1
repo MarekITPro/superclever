@@ -13,7 +13,14 @@ param(
 Install-Module -Name Az.Storage,SQLServer -Force
 
 # Get list of files for given database from AZ Blob
-$context = New-AzStorageContext -SasToken $SASTOKEN -StorageAccountName $azStorageAccName
+try {
+   $context = New-AzStorageContext -SasToken $SASTOKEN -StorageAccountName $azStorageAccName
+}
+catch
+{
+   Write-Output "Unable to connect to Azure Storage, $($_.Exception.Message)"
+   exit 1;
+}
 $list = Get-AzStorageBlob -container $azStorageContainer -Context $context |Where-Object {($_.lastmodified -ge $(get-date).AddDays(-$lastXDays)) -and ($_.Name -match $dbname)}
 $newest = $list|Select-Object -Property Name |Sort-Object -Descending -Property LastModified |Select-Object -First 1
 $newestWithoutNumber = $newest.Name -replace '.(\d+).bak',''
