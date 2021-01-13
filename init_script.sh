@@ -76,6 +76,7 @@ SAS_KEY=$3
 STORAGE_ACC=$4
 STORAGE_CONT=$5
 BEATS_PASS=$6
+export BEATS_PASS
 
 echo "setting local SQL SA pwd"
 # Set local SA password for SQL instance
