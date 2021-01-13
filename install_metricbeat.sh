@@ -14,11 +14,7 @@ else
   BEATS_TAG=$1
 fi
 
-# hardcoded
-BEATS_USER=beats_admin
-#testing
-#BEATS_USER=marek.nowak
-
+BEATS_USER=beats_enroll
 KIBANA_URL='https://6caa9776483f445997c132f2ec3d66ec.eu-west-1.aws.found.io:9243'
 
 # version of beat to be installed
@@ -35,33 +31,45 @@ function install_metricbeat() {
     sudo dpkg -i $METRICBEAT_DOWNLOAD_PATH/metricbeat-$METRICBEAT_VERSION-amd64.deb && rm $METRICBEAT_DOWNLOAD_PATH/metricbeat-$METRICBEAT_VERSION-amd64.deb
 }      
 
-
-function configure_metricbeat(){
-      # get enrollment token (valid only once-until used)
+function enroll_metricbeat() {
+  # get enrollment token (valid only once-until used)
   TOKEN=$( curl -L -X POST "$KIBANA_URL/api/beats/enrollment_tokens" \
   -H 'kbn-xsrf: true' \
   -H 'Content-Type: application/json' \
   -u $BEATS_USER:$BEATS_PASSWD |jq -r .results[0].item )
+  if [ -z $TOKEN  ]; then
+    echo "No token returned from Beats API, cannot enroll."
+    exit 2
+  fi
 
+  echo "Enrolling beat"
   #enroll using executable (this overwrites the yml config file)
-  sudo /usr/bin/metricbeat enroll $KIBANA_URL $TOKEN --force
-  
-  # get ID for a given tag name
-  TAGNAME=$(curl -L -X GET "$KIBANA_URL/api/beats/tags/" \
-  -H 'kbn-xsrf: true' \
-  -u $BEATS_USER:$BEATS_PASSWD | jq -r ".list[]|select(.name==\"$BEATS_TAG\").id")
+  sudo /usr/bin/metricbeat enroll $KIBANA_URL "$TOKEN" --force
+  echo "Enrolling complete, look up for any errors"
+}
 
-  METAUUID=$( sudo cat /var/lib/metricbeat/meta.json | jq -r '.uuid' )
-  # assign tag to endpoint
-  curl -L -X POST "$KIBANA_URL/api/beats/agents_tags/assignments" \
-  -H 'kbn-xsrf: true' \
-  -H 'Content-Type: application/json' \
-  -u $BEATS_USER:$BEATS_PASSWD \
-  --data-raw '{
-      "assignments" : [
-        { "beatId":"'"$METAUUID"'", "tag":"'"$TAGNAME"'" }
-      ]
-  }'
+function set_tag() {
+   echo "Setting up tag"
+  if [[ -z "${BEATS_TAG}" ]]; then
+    echo "No tagname given, skipping setting tag"
+  else
+    # get ID for a given tag name
+    TAGNAME=$(curl -L -X GET "$KIBANA_URL/api/beats/tags/" \
+    -H 'kbn-xsrf: true' \
+    -u $BEATS_USER:$BEATS_PASSWD | jq -r ".list[]|select(.name==\"$BEATS_TAG\").id")
+
+    METAUUID=$( sudo cat /var/lib/metricbeat/meta.json | jq -r '.uuid' )
+    # assign tag to endpoint
+    curl -L -X POST "$KIBANA_URL/api/beats/agents_tags/assignments" \
+    -H 'kbn-xsrf: true' \
+    -H 'Content-Type: application/json' \
+    -u $BEATS_USER:$BEATS_PASSWD \
+    --data-raw '{
+        "assignments" : [
+          { "beatId":"'"$METAUUID"'", "tag":"'"$TAGNAME"'" }
+        ]
+    }'
+  fi
 }                  
 
 function start_metricbeat() {
@@ -69,5 +77,6 @@ function start_metricbeat() {
 }       
 
 install_metricbeat
-configure_metricbeat
+enroll_metricbeat
+set_tag
 start_metricbeat
