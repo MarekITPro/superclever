@@ -89,11 +89,12 @@ sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set filelocati
 sleep 1m
 sudo systemctl start mssql-server
 
-echo "install metricbeat with sql module"
-# install and enroll metricbeat and tag with 'sql' /hardcoded, tag must exist/
-/tmp/install_metricbeat.sh sql
-# enable mssql module
+echo "install metricbeat with mssql module"
+# install and enroll metricbeat and tag with 'mb-mssql' /tag must exist/
+/tmp/install_metricbeat.sh mb-mssql
+# enable mssql module and restart service
 /usr/bin/metricbeat modules enable mssql
+sudo systemctl restart metricbeat
 
 echo "invoke PowerShell to download, restore and dbcc checkdb"
 /tmp/sqldbcheck.ps1 -SASTOKEN $SAS_KEY -dbName $DATABASE_NAME -azStorageAccName $STORAGE_ACC -azStorageContainer $STORAGE_CONT -sqlSAPass $SQL_SA_PASSWORD
