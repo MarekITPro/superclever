@@ -31,7 +31,7 @@ $fullListToRestore | Get-AzStorageBlobContent -Destination '/datadrive/backup/'
 
 if($(get-childitem -path '/datadrive/backup').count -gt 1){
 
-   # restore
+# restore
 $server  = 'localhost'
 $username = 'sa'
 $password = ConvertTo-SecureString $sqlSAPass -AsPlainText -Force
