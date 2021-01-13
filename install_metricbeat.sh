@@ -15,9 +15,9 @@ else
 fi
 
 # hardcoded
-# BEATS_USER=beats_admin
+BEATS_USER=beats_admin
 #testing
-BEATS_USER=marek.nowak
+#BEATS_USER=marek.nowak
 
 KIBANA_URL='https://6caa9776483f445997c132f2ec3d66ec.eu-west-1.aws.found.io:9243'
 
