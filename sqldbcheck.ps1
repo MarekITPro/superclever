@@ -50,8 +50,8 @@ Restore-SqlDatabase -ServerInstance $Server -Database $dbName -BackupFile $BUFil
 Write-Output 'Starting dbcc checkdb'
 # run dbcccheck
 $tsql = "DBCC CHECKDB (`"$dbname`") with no_infomsgs,all_errormsgs"
-Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/tmp/$dbname.dbcc.log"
-Write-Output 'Completed dbcc checkdb, check /tmp/ for *.dbcc.logs'
+Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/var/log/dbcc.$dbname.log"
+Write-Output "Completed dbcc checkdb, check /var/log/dbcc.$dbname.log file for any errors (only errors end up there!)"
 }
 else {
    Write-Host 'No files have been downloaded for db restore'
