@@ -78,26 +78,23 @@ STORAGE_CONT=$5
 BEATS_PASS=$6
 export BEATS_PASS
 
-echo "setting local SQL SA pwd"
+echo "Setting local SQL SA pwd"
 # Set local SA password for SQL instance
 sudo systemctl stop mssql-server
 sleep 1m
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set-sa-password
 # set default data and log dirs to BIG disk to avoid running restore with relocation switch
-echo "setting SQL data and log dirs"
+echo "Setting SQL data and log dirs"
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set filelocation.defaultdatadir /datadrive/restore/data
 sudo MSSQL_SA_PASSWORD=$SQL_SA_PASSWORD /opt/mssql/bin/mssql-conf set filelocation.defaultlogdir /datadrive/restore/log
 sleep 1m
 sudo systemctl start mssql-server
 
-echo "install metricbeat with mssql module"
-# install and enroll metricbeat and tag with 'mb-mssql' /tag must exist/
-/tmp/install_metricbeat.sh mb-mssql
-# enable mssql module and restart service
-/usr/bin/metricbeat modules enable mssql
-sudo systemctl restart metricbeat
+echo "Installing beat"
+# enroll beat and tag it with output
+/tmp/install_filebeat.sh fb-out-all
 
-echo "invoke PowerShell to download, restore and dbcc checkdb"
+echo "Invoking PowerShell to download, restore and run dbcc checkdb"
 /tmp/sqldbcheck.ps1 -SASTOKEN $SAS_KEY -dbName $DATABASE_NAME -azStorageAccName $STORAGE_ACC -azStorageContainer $STORAGE_CONT -sqlSAPass $SQL_SA_PASSWORD
 
-echo "done, or is it?"
+echo "done, or is it? :)"
