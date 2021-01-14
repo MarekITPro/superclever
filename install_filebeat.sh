@@ -31,34 +31,47 @@ function install_filebeat() {
     sudo dpkg -i $FILEBEAT_DOWNLOAD_PATH/filebeat-$FILEBEAT_VERSION-amd64.deb && rm $FILEBEAT_DOWNLOAD_PATH/filebeat-$FILEBEAT_VERSION-amd64.deb
 }
 
-function configure_filebeat() {
-# using REST API
-# get enrollment token (valid only once - until used)
+function enroll_filebeat() {
+  # get enrollment token (valid only once-until used)
   TOKEN=$( curl -L -X POST "$KIBANA_URL/api/beats/enrollment_tokens" \
   -H 'kbn-xsrf: true' \
   -H 'Content-Type: application/json' \
   -u $BEATS_USER:$BEATS_PASSWD |jq -r .results[0].item )
+  if [ -z $TOKEN  ]; then
+    echo "No token returned from Beats API, cannot enroll."
+    exit 2
+  fi
 
+  echo "Enrolling beat"
   #enroll using executable (this overwrites the yml config file)
-  sudo /usr/bin/filebeat enroll $KIBANA_URL $TOKEN --force
-  
-  # get ID for a given tag name
-  TAGNAME=$(curl -L -X GET "$KIBANA_URL/api/beats/tags/" \
-  -H 'kbn-xsrf: true' \
-  -u $BEATS_USER:$BEATS_PASSWD | jq -r ".list[]|select(.name==\"$BEATS_TAG\").id")
+  sudo /usr/bin/filebeat enroll $KIBANA_URL "$TOKEN" --force
+  echo "Enrolling complete, look up for any errors"
+}
 
-  METAUUID=$( sudo cat /var/lib/filebeat/meta.json | jq -r '.uuid' )
-  
-  # assign tag to enrolled beat
-  curl -L -X POST "$KIBANA_URL/api/beats/agents_tags/assignments" \
-  -H 'kbn-xsrf: true' \
-  -H 'Content-Type: application/json' \
-  -u $BEATS_USER:$BEATS_PASSWD \
-  --data-raw '{
-      "assignments" : [
-        { "beatId":"'"$METAUUID"'", "tag":"'"$TAGNAME"'" }
-      ]
-  }'
+function set_tag() {
+ echo "Setting up tag"
+  if [[ -z "${BEATS_TAG}" ]]; then
+    echo "No tagname given, skipping setting tag"
+  else
+    # get ID for a given tag name
+    echo "Getting tag id from name"
+    TAGNAME=$(curl -s -L -X GET "$KIBANA_URL/api/beats/tags/" \
+    -H 'kbn-xsrf: true' \
+    -u $BEATS_USER:$BEATS_PASSWD | jq -r ".list[]|select(.name==\"$BEATS_TAG\").id")
+
+    METAUUID=$( sudo cat /var/lib/auditbeat/meta.json | jq -r '.uuid' )
+    # assign tag to endpoint
+    echo "Assigning tag"
+    curl -L -X POST "$KIBANA_URL/api/beats/agents_tags/assignments" \
+    -H 'kbn-xsrf: true' \
+    -H 'Content-Type: application/json' \
+    -u $BEATS_USER:$BEATS_PASSWD \
+    --data-raw '{
+        "assignments" : [
+          { "beatId":"'"$METAUUID"'", "tag":"'"$TAGNAME"'" }
+        ]
+    }'
+  fi
 }
 
 function start_filebeat() {
@@ -66,5 +79,6 @@ function start_filebeat() {
 }
 
 install_filebeat
-configure_filebeat
+enroll_filebeat
+set_tag
 start_filebeat
