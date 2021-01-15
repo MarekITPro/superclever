@@ -59,7 +59,7 @@ function set_tag() {
     -H 'kbn-xsrf: true' \
     -u $BEATS_USER:$BEATS_PASSWD | jq -r ".list[]|select(.name==\"$BEATS_TAG\").id")
 
-    METAUUID=$( sudo cat /var/lib/auditbeat/meta.json | jq -r '.uuid' )
+    METAUUID=$( sudo cat /var/lib/filebeat/meta.json | jq -r '.uuid' )
     # assign tag to endpoint
     echo "Assigning tag"
     curl -L -X POST "$KIBANA_URL/api/beats/agents_tags/assignments" \
