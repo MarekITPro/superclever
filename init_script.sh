@@ -15,7 +15,7 @@ while [ ! -e /dev/sdc ]; do
     fi
 done
 
-echo "partition data disk"
+echo "Partition data disk"
 sudo parted /dev/disk/azure/scsi1/lun0 mklabel gpt
 sudo parted -a opt /dev/disk/azure/scsi1/lun0 mkpart primary ext4 0% 100%
 
@@ -32,24 +32,24 @@ while [ ! -e /dev/disk/azure/scsi1/lun0-part1 ]; do
     fi
 done
 
-echo "format disk"
+echo "Format disk"
 sudo mkfs.xfs /dev/disk/azure/scsi1/lun0-part1
 
-echo "mount as /datadrive"
+echo "Mount as /datadrive"
 sudo mkdir /datadrive
 sudo mount /dev/disk/azure/scsi1/lun0-part1 /datadrive
 
-echo "make folders"
+echo "Make folders"
 sudo mkdir /datadrive/tools
 sudo mkdir /datadrive/backup
 sudo mkdir /datadrive/restore
 sudo mkdir /datadrive/restore/data
 sudo mkdir /datadrive/restore/log
 
-echo "set RWX permissions on /datadrive and subfolders"
+echo "Set RWX permissions on /datadrive and subfolders"
 sudo chmod -R 777 /datadrive/
 
-echo "install PowerShell"
+echo "Install PowerShell"
 # Update the list of packages
 sudo apt-get update
 # Install pre-requisite packages.
@@ -67,7 +67,7 @@ sudo apt-get install -y powershell
 
 sleep 1m
 
-echo "setting variables needed later"
+echo "Setting variables needed later"
 # Setting some vars from script params
 SQL_SA_PASSWORD=$1
 DATABASE_NAME=$2
