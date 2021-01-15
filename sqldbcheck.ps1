@@ -49,7 +49,7 @@ Restore-SqlDatabase -ServerInstance $Server -Database $dbName -BackupFile $BUFil
 #need to restore to /datadrive/restore hence the -Autorelocatefile as we have set /data and /log folders in the init script
 Write-Output 'Starting dbcc checkdb'
 # run dbcccheck
-$tsql = "DBCC CHECKDB (`"$dbname`") with no_infomsgs,all_errormsgs"
+$tsql = "DBCC CHECKDB (`"$dbname`") with all_errormsgs"
 Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/var/log/dbcc.$dbname.log"
 Write-Output "Completed dbcc checkdb, check /var/log/dbcc.$dbname.log file for any errors (only errors end up there!)"
 }
