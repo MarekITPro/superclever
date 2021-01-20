@@ -1,7 +1,7 @@
 #! /bin/bash
 # check params :)
-if [[ $# -ne 6 ]]; then
-    echo "Illegal number of parameters, use: script.sh sql_sa_password database_name sas_key storage_acc_name storage_cont beats_pass"
+if [[ $# -ne 7 ]]; then
+    echo "Illegal number of parameters, use: script.sh sql_sa_password database_name sas_key storage_acc_name storage_cont beats_pass beats_logger_pass"
     exit 2
 fi
 
@@ -39,7 +39,7 @@ echo "Mount as /datadrive"
 sudo mkdir /datadrive
 sudo mount /dev/disk/azure/scsi1/lun0-part1 /datadrive
 
-echo "Make folders"
+echo "Make folder."
 sudo mkdir /datadrive/tools
 sudo mkdir /datadrive/backup
 sudo mkdir /datadrive/restore
@@ -76,7 +76,7 @@ SAS_KEY=$3
 STORAGE_ACC=$4
 STORAGE_CONT=$5
 BEATS_PASS=$6
-export BEATS_PASS
+BEATS_LOGGER_PASS=$7
 
 echo "Setting local SQL SA pwd"
 # Set local SA password for SQL instance
@@ -91,10 +91,10 @@ sleep 1m
 sudo systemctl start mssql-server
 
 echo "Installing beat"
-# enroll beat and tag it with output
-/tmp/install_beat.sh fb-out-mssql
+# enroll beat and tag it with output tag
+/tmp/install_beat.sh $BEATS_PASS $BEATS_LOGGER_PASS fb-out-mssql
 
 echo "Invoking PowerShell to download, restore and run dbcc checkdb"
 /tmp/sqldbcheck.ps1 -SASTOKEN $SAS_KEY -dbName $DATABASE_NAME -azStorageAccName $STORAGE_ACC -azStorageContainer $STORAGE_CONT -sqlSAPass $SQL_SA_PASSWORD
 
-echo "done, or is it? :)"
+echo "Bash script completed its run"
