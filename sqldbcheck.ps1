@@ -48,7 +48,7 @@ if($(get-childitem -path '/datadrive/backup').count -gt 1){
    #need to restore to /datadrive/restore hence the -Autorelocatefile as we have set /data and /log folders in the init script
    Write-Output 'Starting dbcc checkdb.'
    # run dbcccheck
-   $tsql = "DBCC CHECKDB (`"$dbname`") with all_errormsgs"
+   $tsql = "DBCC CHECKDB (`"$dbname`")"
    Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/var/log/dbcc.$dbname.log"
    Write-Output "Completed dbcc checkdb, check /var/log/dbcc.$dbname.log file for any info/errors."
 }
