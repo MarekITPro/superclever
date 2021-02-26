@@ -1,4 +1,5 @@
 #! /usr/bin/pwsh
+# Last edited: 20/01/2021
 
 [cmdletbinding()]
 param(
@@ -49,8 +50,8 @@ if($(get-childitem -path '/datadrive/backup').count -gt 1){
    Write-Output 'Starting dbcc checkdb.'
    # run dbcccheck
    $tsql = "DBCC CHECKDB (`"$dbname`")"
-   Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/var/log/dbcc.$dbname.log"
-   Write-Output "Completed dbcc checkdb, check /var/log/dbcc.$dbname.log file for any info/errors."
+   Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/var/log/dbcc/$dbname.log"
+   Write-Output "Completed dbcc checkdb, check /var/log/dbcc/$dbname.log file for any info/errors."
 }
 else {
    Write-Host 'No files have been downloaded for db restore.'

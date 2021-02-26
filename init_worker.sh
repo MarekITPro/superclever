@@ -1,4 +1,7 @@
 #! /bin/bash
+
+# Last edited: 22/02/2021
+
 # check params :)
 if [[ $# -ne 5 ]]; then
     echo "Illegal number of parameters, use: init_worker.sh sql_sa_password database_name sas_key storage_acc_name storage_cont"
