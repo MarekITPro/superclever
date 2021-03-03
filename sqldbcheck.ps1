@@ -51,7 +51,8 @@ if($(get-childitem -path '/datadrive/backup').count -gt 1){
    # run dbcccheck
    $tsql = "DBCC CHECKDB (`"$dbname`")"
    mkdir /tmp/dbcc |out-null
-   Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds |out-file "/tmp/dbcc/$dbname.log"
+   Invoke-Sqlcmd -Query $tsql -ServerInstance $server -Credential $sqlCreds -ErrorVariable err2
+   $err2 |out-file "/tmp/dbcc/$dbname.log"
    Write-Output "Completed dbcc checkdb, check /tmp/dbcc/$dbname.log file for any info/errors."
 }
 else {
